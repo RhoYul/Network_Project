@@ -1,5 +1,3 @@
-// 로그인 화면 구현 (java swing)
-
 package Main;
 
 import javax.swing.*;
@@ -27,12 +25,14 @@ public class LoginFrame extends JFrame {
         JLabel passwdLabel = new JLabel("비밀번호:");
         JPasswordField passwdField = new JPasswordField();
         JButton loginButton = new JButton("로그인");
+        JButton registerButton = new JButton("회원가입"); // 회원가입 버튼 추가
 
         panel.add(userIdLabel);
         panel.add(userIdField);
         panel.add(passwdLabel);
         panel.add(passwdField);
         panel.add(loginButton);
+        panel.add(registerButton); // 회원가입 버튼 추가
 
         add(panel);
 
@@ -60,6 +60,14 @@ public class LoginFrame extends JFrame {
                 }
             }
         });
+
+        // 회원가입 버튼 동작
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new RegisterFrame(clientSocketHandler).setVisible(true); // 회원가입 화면으로 이동
+                dispose(); // 현재 창 닫기
+            }
+        });
     }
 }
-

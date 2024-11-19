@@ -36,6 +36,24 @@ class ClientHandler extends Thread {
                     } else {
                         out.println("LOGIN_FAIL");
                     }
+                } else if (command.equals("REGISTER")) { // 회원가입 처리
+                    try {
+                        // 요청 데이터 분리
+                        String userId = parts[1];
+                        String passwd = parts[2];
+                        String userName = parts[3];
+                        String email = parts[4];
+
+                        // 데이터베이스에 회원정보 삽입
+                        userDAO.insertUser(userId, passwd, userName, email);
+
+                        // 성공 메시지 전송
+                        out.println("REGISTER_SUCCESS");
+                    } catch (Exception e) {
+                        // 실패 메시지 전송
+                        out.println("REGISTER_FAIL");
+                        e.printStackTrace(); // 서버 로그 출력
+                    }
                 } else if (command.equals("CREATE_CHANNEL")) { // 채널 생성 처리
                     String channelName = parts[1];
                     // 채널 생성 로직 (DB 연동)
@@ -55,4 +73,3 @@ class ClientHandler extends Thread {
         }
     }
 }
-
