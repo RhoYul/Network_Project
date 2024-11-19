@@ -18,7 +18,7 @@ class ClientHandler extends Thread {
         this.clientSocket = clientSocket;
         this.userDAO = userDAO;
         this.sessionManager = sessionManager;
-        this.channelDAO = new ChannelDAO(sessionManager);
+        this.channelDAO = channelDAO; // 전달된 ChannelDAO 사용
     }
 
     @Override

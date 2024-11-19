@@ -45,24 +45,39 @@ public class ChannelFrame extends JFrame {
                     return;
                 }
 
-                try {
-                    // 서버로 채널 생성 요청
-                    String request = "CREATE_CHANNEL " + channelName + " SESSION_ID=" + sessionID;
-                    System.out.println("Request sent: " + request); // 디버깅용 로그
+                // 백그라운드 작업 시작
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        try {
+                            // 서버로 채널 생성 요청
+                            String request = "CREATE_CHANNEL " + channelName + " SESSION_ID=" + sessionID;
+                            System.out.println("Request sent: " + request); // 디버깅용 로그
 
-                    String response = clientSocketHandler.sendRequest(request);
-                    System.out.println("Response received: " + response); // 디버깅용 로그
+                            String response = clientSocketHandler.sendRequest(request);
+                            System.out.println("Response received: " + response); // 디버깅용 로그
 
-                    if (response.startsWith("CHANNEL_CREATED")) {
-                        JOptionPane.showMessageDialog(null, "채널 생성 성공!");
-                    } else {
-                        JOptionPane.showMessageDialog(null, "채널 생성 실패: " + response);
+                            // 서버 응답 처리
+                            if (response.startsWith("CHANNEL_CREATED")) {
+                                SwingUtilities.invokeLater(() -> {
+                                    JOptionPane.showMessageDialog(null, "채널 생성 성공!");
+                                });
+                            } else {
+                                SwingUtilities.invokeLater(() -> {
+                                    JOptionPane.showMessageDialog(null, "채널 생성 실패: " + response);
+                                });
+                            }
+                        } catch (IOException ex) {
+                            SwingUtilities.invokeLater(() -> {
+                                JOptionPane.showMessageDialog(null, "서버와 통신 중 오류 발생: " + ex.getMessage());
+                            });
+                            ex.printStackTrace();
+                        }
+                        return null;
                     }
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(null, "서버와 통신 중 오류 발생: " + ex.getMessage());
-                    ex.printStackTrace();
-                }
+                }.execute();
             }
         });
+
     }
 }
