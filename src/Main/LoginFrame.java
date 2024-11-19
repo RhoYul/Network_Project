@@ -48,9 +48,15 @@ public class LoginFrame extends JFrame {
                     String request = "LOGIN " + userId + " " + passwd;
                     String response = clientSocketHandler.sendRequest(request);
 
-                    if ("LOGIN_SUCCESS".equals(response)) {
+                    if (response.startsWith("LOGIN_SUCCESS")) {
+                        String[] responseParts = response.split(" ");
+                        if (responseParts.length < 2) {
+                            JOptionPane.showMessageDialog(null, "서버 응답에 문제가 있습니다.");
+                            return;
+                        }
+                        String sessionID = responseParts[1]; // "LOGIN_SUCCESS <sessionId>"
                         JOptionPane.showMessageDialog(null, "로그인 성공!");
-                        new ChannelFrame(clientSocketHandler).setVisible(true); // 채널 화면으로 이동
+                        new ChannelFrame(clientSocketHandler, sessionID).setVisible(true); // 채널 화면으로 이동
                         dispose(); // 현재 창 닫기
                     } else {
                         JOptionPane.showMessageDialog(null, "로그인 실패!");
@@ -60,6 +66,7 @@ public class LoginFrame extends JFrame {
                 }
             }
         });
+
 
         // 회원가입 버튼 동작
         registerButton.addActionListener(new ActionListener() {

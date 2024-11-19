@@ -21,7 +21,7 @@ public class ClientSocketHandler {
         return in.readLine(); // 서버 응답 반환
     }
 
-    // 소켓 종료
+    // 소켓 종료	
     public void close() throws IOException {
         if (socket != null) socket.close();
     }
