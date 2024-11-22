@@ -1,4 +1,4 @@
-// 데이터베이스 (mysql)과 java 연결하는 부분 (jdbc 사용)
+// The part where the connection to the database (MySQL) and Java is established using JDBC
 
 package Database;
 
@@ -8,12 +8,12 @@ import java.sql.SQLException;
 
 public class DBUtil {
 
-    // JDBC URL, 사용자명, 비밀번호
+    // JDBC URL, USER, PASSWORD
     private static final String URL = "jdbc:mysql://localhost:3306/network_project?serverTimezone=UTC";
     private static final String USER = "root";
     private static final String PASSWORD = "1234";
 
-    // 데이터베이스 연결 메서드
+    // Database connection
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
