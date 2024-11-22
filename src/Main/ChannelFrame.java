@@ -1,4 +1,5 @@
-// 채널(메모) 개설하는 Frame 입니다. Channel 생성 버튼 누르면 클라이언트가 서버에 채널을 개설해달라고 요청하게 됩니다.
+// The frame for creating a channel (memo). When the 'Create Channel' button is pressed, 
+// the client sends a request to the server to create a channel.
 
 package Main;
 
@@ -11,7 +12,7 @@ import Client.ClientSocketHandler;
 
 public class ChannelFrame extends JFrame {
     private ClientSocketHandler clientSocketHandler;
-    private String sessionID; // 세션 ID
+    private String sessionID; // Session ID
 
     public ChannelFrame(ClientSocketHandler clientSocketHandler, String sessionID) {
         this.clientSocketHandler = clientSocketHandler;
@@ -30,36 +31,36 @@ public class ChannelFrame extends JFrame {
 
         panel.add(channelLabel);
         panel.add(channelField);
-        panel.add(new JLabel()); // 빈 공간
+        panel.add(new JLabel()); // Empty space
         panel.add(createChannelButton);
 
         add(panel);
 
-        // 채널 생성 버튼 동작
+        // Channel creation button action
         createChannelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String channelName = channelField.getText();
 
-                // 채널 이름 유효성 검사
+                // Channel name validation
                 if (channelName == null || channelName.trim().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "채널 이름을 입력하세요!");
                     return;
                 }
 
-                // 백그라운드 작업 시작
+                // Start background task
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() throws Exception {
                         try {
-                            // 서버로 채널 생성 요청
+                            // Send channel creation request to the server
                             String request = "CREATE_CHANNEL " + channelName + " SESSION_ID=" + sessionID;
-                            System.out.println("Request sent: " + request); // 디버깅용 로그
+                            System.out.println("Request sent: " + request); // Debugging log
 
                             String response = clientSocketHandler.sendRequest(request);
-                            System.out.println("Response received: " + response); // 디버깅용 로그
+                            System.out.println("Response received: " + response); // Debugging log
 
-                            // 서버 응답 처리
+                            // Handle server response
                             if (response.startsWith("CHANNEL_CREATED")) {
                                 SwingUtilities.invokeLater(() -> {
                                     JOptionPane.showMessageDialog(null, "채널 생성 성공!");
