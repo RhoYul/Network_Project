@@ -1,4 +1,4 @@
-// channel 테이블의 데이터를 담는 그릇에 해당하는 코드입니다.
+// Saving data to the Channel table
 
 package Channel;
 
