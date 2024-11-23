@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+// The frame for creating a channel (memo). When the 'Create Channel' button is pressed, 
+// the client sends a request to the server to create a channel.
+
+>>>>>>> refs/remotes/origin/master
 package Main;
 
 import javax.swing.*;
@@ -7,9 +13,13 @@ import Client.ClientSocketHandler;
 
 public class ChannelFrame extends JFrame {
     private ClientSocketHandler clientSocketHandler;
+<<<<<<< HEAD
     private String sessionID; // 세션 ID
     private String userID;    // 사용자 ID
     private JList<String> channelList; // 채널 목록
+=======
+    private String sessionID; // Session ID
+>>>>>>> refs/remotes/origin/master
 
     public ChannelFrame(ClientSocketHandler clientSocketHandler, String sessionID, String userID) {
         this.clientSocketHandler = clientSocketHandler;
@@ -29,14 +39,22 @@ public class ChannelFrame extends JFrame {
         JTextField channelField = new JTextField();
         JButton createChannelButton = new JButton("채널 생성");
 
+<<<<<<< HEAD
         createChannelPanel.add(channelLabel);
         createChannelPanel.add(channelField);
         createChannelPanel.add(createChannelButton);
+=======
+        panel.add(channelLabel);
+        panel.add(channelField);
+        panel.add(new JLabel()); // Empty space
+        panel.add(createChannelButton);
+>>>>>>> refs/remotes/origin/master
 
         // 채널 목록 표시
         channelList = new JList<>();
         JScrollPane scrollPane = new JScrollPane(channelList);
 
+<<<<<<< HEAD
         // 채널 관리 버튼
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5)); // 3개의 버튼 사용
         JButton userInfoButton = new JButton("사용자 ID: " + userID); // 사용자 ID 표시
@@ -73,17 +91,59 @@ public class ChannelFrame extends JFrame {
     // 서버에서 채널 목록 로드
     private void loadChannelList() {
         new SwingWorker<Void, Void>() {
+=======
+        // Channel creation button action
+        createChannelButton.addActionListener(new ActionListener() {
+>>>>>>> refs/remotes/origin/master
             @Override
             protected Void doInBackground() throws Exception {
                 try {
                     String request = "LIST_CHANNELS SESSION_ID=" + sessionID;
                     String response = clientSocketHandler.sendRequest(request);
 
+<<<<<<< HEAD
                     if (response.startsWith("CHANNEL_LIST")) {
                         String[] channels = response.replace("CHANNEL_LIST ", "").split(",");
                         SwingUtilities.invokeLater(() -> channelList.setListData(channels));
                     } else {
                         SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "채널 목록 로드 실패: " + response));
+=======
+                // Channel name validation
+                if (channelName == null || channelName.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "채널 이름을 입력하세요!");
+                    return;
+                }
+
+                // Start background task
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        try {
+                            // Send channel creation request to the server
+                            String request = "CREATE_CHANNEL " + channelName + " SESSION_ID=" + sessionID;
+                            System.out.println("Request sent: " + request); // Debugging log
+
+                            String response = clientSocketHandler.sendRequest(request);
+                            System.out.println("Response received: " + response); // Debugging log
+
+                            // Handle server response
+                            if (response.startsWith("CHANNEL_CREATED")) {
+                                SwingUtilities.invokeLater(() -> {
+                                    JOptionPane.showMessageDialog(null, "채널 생성 성공!");
+                                });
+                            } else {
+                                SwingUtilities.invokeLater(() -> {
+                                    JOptionPane.showMessageDialog(null, "채널 생성 실패: " + response);
+                                });
+                            }
+                        } catch (IOException ex) {
+                            SwingUtilities.invokeLater(() -> {
+                                JOptionPane.showMessageDialog(null, "서버와 통신 중 오류 발생: " + ex.getMessage());
+                            });
+                            ex.printStackTrace();
+                        }
+                        return null;
+>>>>>>> refs/remotes/origin/master
                     }
                 } catch (IOException ex) {
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "서버와 통신 중 오류 발생: " + ex.getMessage()));

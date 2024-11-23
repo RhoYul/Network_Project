@@ -1,4 +1,4 @@
-// CLient 단에 해당하는 코드입니다. 서버에 연결 요청, 그 다음 request 하는 방식
+// Request to the server after establishing a connection.
 
 package Client;
 
@@ -11,19 +11,19 @@ public class ClientSocketHandler {
     private BufferedReader in;
 
     public ClientSocketHandler(String serverAddress, int serverPort) throws IOException {
-        // 서버 연결
+        // Server connection
         this.socket = new Socket(serverAddress, serverPort);
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
-    // 서버로 요청 보내기
+    // Sending request tod the server
     public String sendRequest(String request) throws IOException {
-        out.println(request); // 요청 전송
-        return in.readLine(); // 서버 응답 반환
+        out.println(request); // Sending request
+        return in.readLine(); // Returning a response from the server
     }
 
-    // 소켓 종료	
+    // Socket closed	
     public void close() throws IOException {
         if (socket != null) socket.close();
     }
