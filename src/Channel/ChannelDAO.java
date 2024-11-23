@@ -73,51 +73,6 @@ public class ChannelDAO {
         return channelNames;
     }
 
- // Connect with user
-    public boolean addUserToChannel(String channelName, String userId) {
-        String checkChannelQuery = "SELECT COUNT(*) FROM channels WHERE CHANNEL_NAME = ?";
-        String checkUserQuery = "SELECT COUNT(*) FROM users WHERE USER_ID = ?";
-        String insertQuery = "INSERT INTO channel_users (CHANNEL_NAME, USER_ID) VALUES (?, ?)";
-
-        try (Connection conn = DBUtil.getConnection()) {
-            // 1. Check if the channel exists
-            try (PreparedStatement checkChannelStmt = conn.prepareStatement(checkChannelQuery)) {
-                checkChannelStmt.setString(1, channelName);
-                try (ResultSet rs = checkChannelStmt.executeQuery()) {
-                    if (rs.next() && rs.getInt(1) == 0) {
-                        System.out.println("Channel does not exist: " + channelName);
-                        return false;
-                    }
-                }
-            }
-
-            // 2. Check if the user exists
-            try (PreparedStatement checkUserStmt = conn.prepareStatement(checkUserQuery)) {
-                checkUserStmt.setString(1, userId);
-                try (ResultSet rs = checkUserStmt.executeQuery()) {
-                    if (rs.next() && rs.getInt(1) == 0) {
-                        System.out.println("User does not exist: " + userId);
-                        return false;
-                    }
-                }
-            }
-
-            // 3. Insert into channel_users
-            try (PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
-                pstmt.setString(1, channelName);
-                pstmt.setString(2, userId);
-                pstmt.executeUpdate();
-                return true;
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Error adding user to channel: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-
     // delete channel
     public boolean deleteChannel(String channelName, String ownerId) {
         String query = "DELETE FROM channels WHERE CHANNEL_NAME = ? AND OWNER_ID = ?";
@@ -133,6 +88,37 @@ public class ChannelDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static int getChannelIdFromName(String channelName) throws SQLException {
+        String query = "SELECT ID FROM channels WHERE CHANNEL_NAME = ?";
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, channelName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("ID"); // 채널 ID 반환
+                } else {
+                    throw new SQLException("Channel not found");
+                }
+            }
+        }
+    }
+
+    
+    public boolean isOwner(String channelName, String userId) throws SQLException {
+        String query = "SELECT COUNT(*) FROM channels WHERE CHANNEL_NAME = ? AND OWNER_ID = ?";
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, channelName);
+            pstmt.setString(2, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0; // 해당 채널이 있고 소유자가 맞는 경우 true 반환
+                }
+            }
+        }
+        return false;
     }
 
 }

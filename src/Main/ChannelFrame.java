@@ -40,15 +40,14 @@ public class ChannelFrame extends JFrame {
 
         // 하단 버튼 패널
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
-        JButton userInfoButton = new JButton("사용자 ID: " + userID);
+        JLabel userInfoLabel = new JLabel("사용자 ID: " + userID, SwingConstants.CENTER);
         JButton joinChannelButton = new JButton("채널 참가");
+        JButton deleteChannelButton = new JButton("채널 삭제");
         JButton refreshButton = new JButton("⟳");
 
-        refreshButton.setPreferredSize(new Dimension(40, 25));
-        refreshButton.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        buttonPanel.add(userInfoButton);
+        buttonPanel.add(userInfoLabel);
         buttonPanel.add(joinChannelButton);
+        buttonPanel.add(deleteChannelButton);
         buttonPanel.add(refreshButton);
 
         mainPanel.add(createChannelPanel, BorderLayout.NORTH);
@@ -60,6 +59,7 @@ public class ChannelFrame extends JFrame {
         // 이벤트 리스너 설정
         createChannelButton.addActionListener(e -> createChannel(channelField));
         joinChannelButton.addActionListener(e -> joinSelectedChannel());
+        deleteChannelButton.addActionListener(e -> deleteSelectedChannel());
         refreshButton.addActionListener(e -> loadChannelList());
 
         // 초기화: 서버에서 채널 목록 로드
@@ -145,9 +145,23 @@ public class ChannelFrame extends JFrame {
                 try {
                     String response = get();
                     if (response.startsWith("CHANNEL_JOINED")) {
-                        JOptionPane.showMessageDialog(null, "채널 참가 성공!");
-                        MemoFrame memoFrame = new MemoFrame(clientSocketHandler, sessionID, selectedChannel.hashCode());
+                        // 서버에서 전달된 참여자 목록 파싱
+                        String[] responseParts = response.split(" ", 3);
+                        String participants = responseParts.length > 2 ? responseParts[2] : "";
+
+                        // 참여자 목록 초기화
+                        DefaultListModel<String> participantsModel = new DefaultListModel<>();
+                        for (String participant : participants.split(",")) {
+                            if (!participant.isEmpty()) {
+                                participantsModel.addElement(participant);
+                            }
+                        }
+
+                        // MemoFrame 초기화 및 표시
+                        MemoFrame memoFrame = new MemoFrame(clientSocketHandler, selectedChannel, participantsModel);
                         memoFrame.setVisible(true);
+
+                        JOptionPane.showMessageDialog(null, "채널 참가 성공!");
                     } else {
                         JOptionPane.showMessageDialog(null, "채널 참가 실패: " + response);
                     }
@@ -157,4 +171,41 @@ public class ChannelFrame extends JFrame {
             }
         }.execute();
     }
+
+
+
+    // 채널 삭제 요청 처리
+    private void deleteSelectedChannel() {
+        String selectedChannel = channelList.getSelectedValue();
+        if (selectedChannel == null) {
+            JOptionPane.showMessageDialog(null, "삭제할 채널을 선택하세요!");
+            return;
+        }
+
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                String request = "DELETE_CHANNEL " + selectedChannel + " SESSION_ID=" + sessionID;
+                return clientSocketHandler.sendRequest(request);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String response = get();
+                    if (response.startsWith("CHANNEL_DELETED")) {
+                        JOptionPane.showMessageDialog(null, "채널 삭제 성공!");
+                        loadChannelList(); // 채널 목록 새로고침
+                    } else if (response.equals("NOT_OWNER")) {
+                        JOptionPane.showMessageDialog(null, "채널 삭제 권한이 없습니다.");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "채널 삭제 실패: " + response);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    JOptionPane.showMessageDialog(null, "채널 삭제 중 오류 발생: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
 }

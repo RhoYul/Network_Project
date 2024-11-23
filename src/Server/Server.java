@@ -27,7 +27,7 @@ public class Server {
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("클라이언트 연결됨: " + clientSocket.getInetAddress());
+                System.out.println("클라이언트 연결됨: " + clientSocket.getInetAddress().getHostAddress());
                 // MemoDAO 전달
                 new ClientHandler(clientSocket, userDAO, sessionManager, channelDAO, memoDAO).start();
             }

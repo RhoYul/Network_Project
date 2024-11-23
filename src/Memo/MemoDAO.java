@@ -22,29 +22,15 @@ public class MemoDAO {
         }
     }
 
-    // Save a new memo
-    public boolean saveMemo(MemoDTO memo, String sessionId) {
-        String userId = sessionManager.getUserId(sessionId); // Get userId from session
-        if (userId == null) {
-            System.out.println("Session is invalid or expired.");
-            return false;
-        }
+    // add new memo
+    public void addMemo(int channelId, String userId, String content) throws SQLException {
+        String sql = "INSERT INTO memo (CONTENT, CHANNEL_ID, USER_ID, CREATED_AT, UPDATED_AT) VALUES (?, ?, ?, NOW(), NOW())";
 
-        String query = "INSERT INTO memo (CONTENT, CHANNEL_ID, USER_ID, CREATED_AT, UPDATED_AT) VALUES (?, ?, ?, ?, ?)";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, memo.getContent()); // Memo content
-            pstmt.setInt(2, memo.getRoomId()); // Channel ID
-            pstmt.setInt(3, Integer.parseInt(userId)); // User ID as integer
-            pstmt.setTimestamp(4, new Timestamp(memo.getCreatedAt().getTime())); // Created timestamp
-            pstmt.setTimestamp(5, new Timestamp(memo.getUpdatedAt().getTime())); // Updated timestamp
-
-            int rowsInserted = pstmt.executeUpdate();
-            return rowsInserted > 0;
-        } catch (SQLException e) {
-            System.out.println("Error saving memo: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, content);      // CONTENT
+            stmt.setInt(2, channelId);       // CHANNEL_ID
+            stmt.setString(3, userId);       // USER_ID
+            stmt.executeUpdate();            // 쿼리 실행
         }
     }
 

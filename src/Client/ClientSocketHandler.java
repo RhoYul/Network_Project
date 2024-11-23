@@ -23,6 +23,15 @@ public class ClientSocketHandler {
         return in.readLine(); // Returning a response from the server
     }
 
+    // 서버로부터 응답 수신
+ 	// ClientSocketHandler.receiveResponse()
+    public String receiveResponse() throws IOException {
+        String response = in.readLine();
+        System.out.println("Received response from server: " + response);
+        return response;
+    }
+
+    
     // Socket closed	
     public void close() throws IOException {
         if (socket != null) socket.close();
