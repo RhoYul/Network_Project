@@ -58,7 +58,7 @@ public class LoginFrame extends JFrame {
                         }
                         String sessionID = responseParts[1]; // "LOGIN_SUCCESS <sessionId>"
                         JOptionPane.showMessageDialog(null, "로그인 성공!");
-                        new ChannelFrame(clientSocketHandler, sessionID).setVisible(true); // 채널 화면으로 이동
+                        new ChannelFrame(clientSocketHandler, sessionID, userId).setVisible(true); // 채널 화면으로 이동
                         dispose(); // 현재 창 닫기
                     } else {
                         JOptionPane.showMessageDialog(null, "로그인 실패!");
