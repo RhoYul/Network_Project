@@ -75,20 +75,57 @@ public class ChannelDAO {
 
     // delete channel
     public boolean deleteChannel(String channelName, String ownerId) {
-        String query = "DELETE FROM channels WHERE CHANNEL_NAME = ? AND OWNER_ID = ?";
+        String verifyOwnerQuery = "SELECT ID FROM channels WHERE CHANNEL_NAME = ? AND OWNER_ID = ?";
+        String deleteMemosQuery = "DELETE FROM memos WHERE CHANNEL_ID = ?";
+        String deleteChannelQuery = "DELETE FROM channels WHERE ID = ?";
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false); // 트랜잭션 시작
 
-            pstmt.setString(1, channelName);
-            pstmt.setString(2, ownerId);
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            int channelId;
+
+            // 1. 채널 주인 검증
+            try (PreparedStatement verifyOwnerStmt = conn.prepareStatement(verifyOwnerQuery)) {
+                verifyOwnerStmt.setString(1, channelName);
+                verifyOwnerStmt.setString(2, ownerId);
+
+                try (ResultSet rs = verifyOwnerStmt.executeQuery()) {
+                    if (rs.next()) {
+                        channelId = rs.getInt("ID"); // 채널 ID 가져오기
+                    } else {
+                        System.out.println("채널 주인이 아님 또는 채널이 존재하지 않음."); // 디버깅 로그
+                        return false; // 채널 주인이 아니거나 채널이 존재하지 않음
+                    }
+                }
+            }
+
+            // 2. 관련된 memos 데이터 삭제
+            try (PreparedStatement deleteMemosStmt = conn.prepareStatement(deleteMemosQuery)) {
+                deleteMemosStmt.setInt(1, channelId);
+                deleteMemosStmt.executeUpdate();
+            }
+
+            // 3. 채널 삭제
+            try (PreparedStatement deleteChannelStmt = conn.prepareStatement(deleteChannelQuery)) {
+                deleteChannelStmt.setInt(1, channelId);
+                int affectedRows = deleteChannelStmt.executeUpdate();
+
+                if (affectedRows > 0) {
+                    conn.commit(); // 성공 시 커밋
+                    System.out.println("채널 삭제 성공: " + channelName); // 디버깅 로그
+                    return true;
+                } else {
+                    conn.rollback(); // 실패 시 롤백
+                    return false;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
+
+
 
     public static int getChannelIdFromName(String channelName) throws SQLException {
         String query = "SELECT ID FROM channels WHERE CHANNEL_NAME = ?";
@@ -120,5 +157,4 @@ public class ChannelDAO {
         }
         return false;
     }
-
 }

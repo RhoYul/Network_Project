@@ -30,7 +30,6 @@ public class SessionManager {
         }
     }
 
-
     // Handler 등록
     public void registerHandler(String userId, ClientHandler handler) {
         userHandlers.put(userId, handler);

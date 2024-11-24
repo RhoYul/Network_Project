@@ -91,11 +91,14 @@ public class ClientHandler extends Thread {
     private void processRequest(String request) {
         System.out.println("Received request: " + request);
 
-        String[] parts = request.split(" ");
+        String[] parts = request.split(" ", 5); // 최대 5개의 파트로 분리
         String command = parts[0];
-        String sessionID = extractSessionId(parts);
+        sessionId = extractSessionId(parts);
 
         switch (command) {
+            case "PUSH_MEMO":
+                handlePushMemo(request, sessionId); // 전체 요청 문자열 전달
+                break;
             case "LOGIN":
                 handleLogin(parts);
                 break;
@@ -103,30 +106,34 @@ public class ClientHandler extends Thread {
                 handleRegister(parts);
                 break;
             case "CREATE_CHANNEL":
-                handleCreateChannel(parts, sessionID);
+                handleCreateChannel(parts, sessionId);
                 break;
             case "LIST_CHANNELS":
-                handleListChannels(sessionID);
+                handleListChannels(sessionId);
                 break;
             case "JOIN_CHANNEL":
-                handleJoinChannel(parts, sessionID);
+                handleJoinChannel(parts, sessionId);
                 break;
             case "QUIT_CHANNEL":
-            	handleLeaveChannel(parts, sessionID);
-            	break;
+                handleLeaveChannel(parts, sessionId);
+                break;
             case "DELETE_CHANNEL":
-                handleDeleteChannel(parts, sessionID);
+                handleDeleteChannel(parts, sessionId);
                 break;
             case "GET_MEMOS":
-                handleGetMemos(parts, sessionID);
+                handleGetMemos(parts, sessionId);
                 break;
             case "ADD_MEMO":
-                handleAddMemo(parts, sessionID);
+                handleAddMemo(parts, sessionId);
+                break;
+            case "SAVE_MEMO":
+                handleSaveMemo(parts, sessionId);
                 break;
             default:
                 sendResponse("UNKNOWN_COMMAND");
         }
     }
+
 
     // 세션 ID 추출 메서드
     private String extractSessionId(String[] parts) {
@@ -269,17 +276,22 @@ public class ClientHandler extends Thread {
     private void broadcastToChannel(int roomId, String message) {
         synchronized (channelUsers) {
             Set<String> users = channelUsers.get(roomId);
-            if (users != null) {
-                for (String userId : users) {
-                    ClientHandler handler = sessionManager.getHandlerByUserId(userId);
-                    if (handler != null) {
-                        handler.sendMessage(message);
-                    }
+            if (users == null || users.isEmpty()) {
+                System.out.println("No users in target channel (Room ID: " + roomId + ").");
+                return;
+            }
+
+            for (String userId : users) {
+                ClientHandler handler = sessionManager.getHandlerByUserId(userId);
+                if (handler != null) {
+                    System.out.println("Broadcasting to user: " + userId + " | Message: " + message);
+                    handler.sendMessage(message);
+                } else {
+                    System.out.println("Handler not found for user: " + userId);
                 }
             }
         }
     }
-
 
     private void sendMessageToUser(String userId, String message) {
         ClientHandler handler = sessionManager.getHandlerByUserId(userId);
@@ -337,19 +349,20 @@ public class ClientHandler extends Thread {
         }
 
         String userId = sessionManager.getUserId(sessionID);
-        if (userId == null || parts.length < 2) {
+        if (userId == null) {
             sendResponse("CHANNEL_CREATE_FAIL");
             return;
         }
 
         try {
-            channelDAO.createChannel(parts[1], userId);
-            sendResponse("CHANNEL_CREATED " + parts[1]);
+            channelDAO.createChannel(parts[1], sessionID); // 채널 생성
+            sendResponse("CHANNEL_CREATED " + parts[1]); // 성공 응답
         } catch (Exception e) {
             sendResponse("CHANNEL_CREATE_FAIL");
-            e.printStackTrace();
+            e.printStackTrace(); // 디버깅용
         }
     }
+
     
     // 채널 삭제
     private void handleDeleteChannel(String[] parts, String sessionID) {
@@ -384,8 +397,6 @@ public class ClientHandler extends Thread {
         }
     }
 
-
-
     // 채널 리스트 불러오기
     private void handleListChannels(String sessionID) {
         if (sessionID == null) {
@@ -403,36 +414,44 @@ public class ClientHandler extends Thread {
         }
     }
 
-
     // 메모 추가
+    // ClientHandler.handleAddMemo() 내부
     private void handleAddMemo(String[] parts, String sessionID) {
-        if (sessionID == null || parts.length < 3) {
-            sendResponse("INVALID_REQUEST");
+        if (sessionID == null) {
+            sendResponse("NOT_LOGGED_IN");
             return;
         }
 
-        int roomId;
         try {
-            roomId = Integer.parseInt(parts[1]);
+            int roomId = Integer.parseInt(parts[1]); // 채널 ID
+            String memoContent = String.join(" ", Arrays.copyOfRange(parts, 3, parts.length)); // 메모 내용
+            String userId = sessionManager.getUserId(sessionID); // 사용자 ID
+
+            if (userId == null) {
+                sendResponse("NOT_LOGGED_IN");
+                return;
+            }
+
+            // 메모를 저장하고 memoId 반환
+            int memoId = memoDAO.addMemo(roomId, memoContent);
+
+            // 채널 내 사용자들에게 메모 내용 브로드캐스트
+            String broadcastMessage = "MEMO_UPDATE " + userId + ": " + memoContent;
+            broadcastToChannel(roomId, broadcastMessage);
+
+            // 성공 응답 전송
+            sendResponse("ADD_MEMO_SUCCESS " + memoId);
         } catch (NumberFormatException e) {
             sendResponse("INVALID_ROOM_ID");
-            return;
-        }
-
-        String userId = sessionManager.getUserId(sessionID);
-        String memoContent = String.join(" ", Arrays.copyOfRange(parts, 2, parts.length));
-
-        try {
-            memoDAO.addMemo(roomId, userId, memoContent);
-            broadcastToChannel(roomId, "MEMO_UPDATE " + userId + ": " + memoContent);
-            sendResponse("ADD_MEMO_SUCCESS");
-        } catch (Exception e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
             sendResponse("ADD_MEMO_FAIL");
             e.printStackTrace();
         }
     }
 
-    
+
+   
     private void handleGetMemos(String[] parts, String sessionID) {
         if (sessionID == null) {
             sendResponse("NOT_LOGGED_IN");
@@ -465,7 +484,83 @@ public class ClientHandler extends Thread {
         }
     }
 
+    private void handlePushMemo(String request, String sessionID) {
+        if (sessionID == null) {
+            sendResponse("NOT_LOGGED_IN");
+            return;
+        }
 
+        try {
+            System.out.println("Processing PUSH_MEMO request: " + request);
+
+            String[] parts = request.split(" ");
+            if (parts.length < 3) {
+                sendResponse("INVALID_REQUEST");
+                System.out.println("Invalid PUSH_MEMO request: " + request);
+                return;
+            }
+
+            int memoId = Integer.parseInt(parts[1]); // 메모 ID
+            int targetChannelId = Integer.parseInt(parts[2]); // 타겟 채널 ID
+
+            // DAO를 통해 memoId로 메모 내용 가져오기
+            MemoDTO memo = memoDAO.getMemoById(memoId);
+            if (memo == null) {
+                sendResponse("MEMO_NOT_FOUND");
+                System.out.println("Memo not found for ID: " + memoId);
+                return;
+            }
+
+            // 타겟 채널에 브로드캐스트
+            String broadcastMessage = "RECEIVED_MEMO " + memo.getContent();
+            broadcastToChannel(targetChannelId, broadcastMessage);
+
+            sendResponse("PUSH_MEMO_SUCCESS");
+        } catch (NumberFormatException e) {
+            sendResponse("INVALID_MEMO_ID");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            sendResponse("PUSH_MEMO_FAIL");
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    private void handleSaveMemo(String[] parts, String sessionID) {
+        if (sessionID == null) {
+            sendResponse("NOT_LOGGED_IN");
+            return;
+        }
+
+        if (parts.length < 3) {
+            sendResponse("INVALID_REQUEST");
+            return;
+        }
+
+        try {
+            int roomId = Integer.parseInt(parts[1]); // 채널 ID
+            String memoContent = String.join(" ", Arrays.copyOfRange(parts, 2, parts.length)); // 메모 내용
+
+            // 예외 처리
+            memoDAO.saveMemoBackup(roomId, memoContent);
+
+            sendResponse("SAVE_MEMO_SUCCESS"); // 성공 응답
+        } catch (NumberFormatException e) {
+            sendResponse("INVALID_ROOM_ID");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            sendResponse("SAVE_MEMO_FAIL");
+            e.printStackTrace();
+        } catch (Exception e) {
+            sendResponse("SAVE_MEMO_FAIL");
+            e.printStackTrace();
+        }
+    }
+
+
+    
     // 세션 ID 생성
     private String generateSessionId() {
         return UUID.randomUUID().toString();

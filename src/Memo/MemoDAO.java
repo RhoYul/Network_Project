@@ -23,21 +23,29 @@ public class MemoDAO {
     }
 
     // add new memo
-    public void addMemo(int channelId, String userId, String content) throws SQLException {
-        String sql = "INSERT INTO memo (CONTENT, CHANNEL_ID, USER_ID, CREATED_AT, UPDATED_AT) VALUES (?, ?, ?, NOW(), NOW())";
+    public int addMemo(int channelId, String content) throws SQLException {
+        String sql = "INSERT INTO memos (CHANNEL_ID, CONTENT, SAVED_AT) VALUES (?, ?, NOW())";
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setInt(1, channelId); // 채널 ID
+            stmt.setString(2, content); // 메모 내용
+            stmt.executeUpdate(); // 메모 추가
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, content);      // CONTENT
-            stmt.setInt(2, channelId);       // CHANNEL_ID
-            stmt.setString(3, userId);       // USER_ID
-            stmt.executeUpdate();            // 쿼리 실행
+            // 생성된 ID 가져오기
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1); // 생성된 메모 ID 반환
+                } else {
+                    throw new SQLException("Failed to retrieve memo ID.");
+                }
+            }
         }
     }
+
 
     // Get all memos for a specific room (sorted by creation time)
     public List<MemoDTO> getMemosByRoom(int channelId) {
         List<MemoDTO> memoList = new ArrayList<>();
-        String query = "SELECT * FROM memo WHERE CHANNEL_ID = ? ORDER BY CREATED_AT ASC";
+        String query = "SELECT * FROM memos WHERE CHANNEL_ID = ? ORDER BY CREATED_AT ASC";
 
         try (PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setInt(1, channelId);
@@ -63,7 +71,7 @@ public class MemoDAO {
 
     // Delete a memo by its ID
     public boolean deleteMemo(int memoId) {
-        String query = "DELETE FROM memo WHERE ID = ?";
+        String query = "DELETE FROM memos WHERE ID = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setInt(1, memoId); // Memo ID
@@ -76,21 +84,29 @@ public class MemoDAO {
         }
     }
 
-    // Update a memo's content
-    public boolean updateMemo(int memoId, String content) {
-        String query = "UPDATE memo SET CONTENT = ?, UPDATED_AT = ? WHERE ID = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, content); // New memo content
-            pstmt.setTimestamp(2, new Timestamp(System.currentTimeMillis())); // Updated timestamp
-            pstmt.setInt(3, memoId); // Memo ID
-
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            System.out.println("Error updating memo: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+    public static void saveMemoBackup(int channelId, String memoContent) throws SQLException {
+        String query = "INSERT INTO memos (CHANNEL_ID, CONTENT, SAVED_AT) VALUES (?, ?, NOW())";
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, channelId);
+            stmt.setString(2, memoContent);
+            stmt.executeUpdate();
         }
+    }
+    
+    public MemoDTO getMemoById(int memoId) throws SQLException {
+        String query = "SELECT * FROM memos WHERE ID = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, memoId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                MemoDTO memo = new MemoDTO();
+                memo.setMemoId(rs.getInt("ID"));
+                memo.setRoomId(rs.getInt("CHANNEL_ID"));
+                memo.setContent(rs.getString("CONTENT"));
+                memo.setCreatedAt(rs.getTimestamp("SAVED_AT"));
+                return memo;
+            }
+        }
+        return null; // 메모가 존재하지 않는 경우
     }
 }

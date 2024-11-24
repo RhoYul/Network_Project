@@ -158,7 +158,7 @@ public class ChannelFrame extends JFrame {
                         }
 
                         // MemoFrame 초기화 및 표시
-                        MemoFrame memoFrame = new MemoFrame(clientSocketHandler, selectedChannel, participantsModel);
+                        MemoFrame memoFrame = new MemoFrame(clientSocketHandler, selectedChannel, participantsModel, sessionID);
                         memoFrame.setVisible(true);
 
                         JOptionPane.showMessageDialog(null, "채널 참가 성공!");
