@@ -17,32 +17,32 @@ public class ChannelFrame extends JFrame {
         this.sessionID = sessionID;
         this.userID = userID;
 
-        setTitle("채널 관리");
+        setTitle("Channel Management");
         setSize(400, 300);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
 
-        // 상단 채널 생성 패널
+        // Top panel for channel creation
         JPanel createChannelPanel = new JPanel(new GridLayout(1, 3, 5, 5));
-        JLabel channelLabel = new JLabel("채널 이름:");
+        JLabel channelLabel = new JLabel("Channel Name:");
         JTextField channelField = new JTextField();
-        JButton createChannelButton = new JButton("채널 생성");
+        JButton createChannelButton = new JButton("Create Channel");
 
         createChannelPanel.add(channelLabel);
         createChannelPanel.add(channelField);
         createChannelPanel.add(createChannelButton);
 
-        // 중앙 채널 목록
+        // Center panel for channel list
         channelList = new JList<>();
         JScrollPane scrollPane = new JScrollPane(channelList);
 
-        // 하단 버튼 패널
+        // Bottom panel with action buttons
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
-        JLabel userInfoLabel = new JLabel("사용자 ID: " + userID, SwingConstants.CENTER);
-        JButton joinChannelButton = new JButton("채널 참가");
-        JButton deleteChannelButton = new JButton("채널 삭제");
+        JLabel userInfoLabel = new JLabel("User ID: " + userID, SwingConstants.CENTER);
+        JButton joinChannelButton = new JButton("Join Channel");
+        JButton deleteChannelButton = new JButton("Delete Channel");
         JButton refreshButton = new JButton("⟳");
 
         buttonPanel.add(userInfoLabel);
@@ -56,17 +56,17 @@ public class ChannelFrame extends JFrame {
 
         add(mainPanel);
 
-        // 이벤트 리스너 설정
+        // Add event listeners
         createChannelButton.addActionListener(e -> createChannel(channelField));
         joinChannelButton.addActionListener(e -> joinSelectedChannel());
         deleteChannelButton.addActionListener(e -> deleteSelectedChannel());
         refreshButton.addActionListener(e -> loadChannelList());
 
-        // 초기화: 서버에서 채널 목록 로드
+        // Initialize: load channel list from server
         loadChannelList();
     }
 
-    // 서버에서 채널 목록 로드
+    // Load channel list from the server
     private void loadChannelList() {
         new SwingWorker<String[], Void>() {
             @Override
@@ -77,7 +77,7 @@ public class ChannelFrame extends JFrame {
                 if (response.startsWith("CHANNEL_LIST")) {
                     return response.replace("CHANNEL_LIST ", "").split(",");
                 } else {
-                    throw new IOException("채널 목록 로드 실패: " + response);
+                    throw new IOException("Failed to load channel list: " + response);
                 }
             }
 
@@ -87,17 +87,17 @@ public class ChannelFrame extends JFrame {
                     String[] channels = get();
                     channelList.setListData(channels);
                 } catch (InterruptedException | ExecutionException e) {
-                    JOptionPane.showMessageDialog(null, "채널 목록 로드 중 오류 발생: " + e.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while loading channel list: " + e.getMessage());
                 }
             }
         }.execute();
     }
 
-    // 채널 생성 요청 처리
+    // Handle channel creation request
     private void createChannel(JTextField channelField) {
         String channelName = channelField.getText().trim();
         if (channelName.isEmpty()) {
-            JOptionPane.showMessageDialog(null, "채널 이름을 입력하세요!");
+            JOptionPane.showMessageDialog(null, "Please enter a channel name!");
             return;
         }
 
@@ -113,23 +113,23 @@ public class ChannelFrame extends JFrame {
                 try {
                     String response = get();
                     if (response.startsWith("CHANNEL_CREATED")) {
-                        JOptionPane.showMessageDialog(null, "채널 생성 성공!");
-                        loadChannelList(); // 채널 목록 새로고침
+                        JOptionPane.showMessageDialog(null, "Channel created successfully!");
+                        loadChannelList(); // Refresh the channel list
                     } else {
-                        JOptionPane.showMessageDialog(null, "채널 생성 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to create channel: " + response);
                     }
                 } catch (InterruptedException | ExecutionException e) {
-                    JOptionPane.showMessageDialog(null, "채널 생성 중 오류 발생: " + e.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while creating channel: " + e.getMessage());
                 }
             }
         }.execute();
     }
 
-    // 채널 참가 요청 처리
+    // Handle channel join request
     private void joinSelectedChannel() {
         String selectedChannel = channelList.getSelectedValue();
         if (selectedChannel == null) {
-            JOptionPane.showMessageDialog(null, "참가할 채널을 선택하세요!");
+            JOptionPane.showMessageDialog(null, "Please select a channel to join!");
             return;
         }
 
@@ -145,11 +145,11 @@ public class ChannelFrame extends JFrame {
                 try {
                     String response = get();
                     if (response.startsWith("CHANNEL_JOINED")) {
-                        // 서버에서 전달된 참여자 목록 파싱
+                        // Parse the participant list from the server
                         String[] responseParts = response.split(" ", 3);
                         String participants = responseParts.length > 2 ? responseParts[2] : "";
 
-                        // 참여자 목록 초기화
+                        // Initialize participant list
                         DefaultListModel<String> participantsModel = new DefaultListModel<>();
                         for (String participant : participants.split(",")) {
                             if (!participant.isEmpty()) {
@@ -157,28 +157,26 @@ public class ChannelFrame extends JFrame {
                             }
                         }
 
-                        // MemoFrame 초기화 및 표시
+                        // Initialize and display MemoFrame
                         MemoFrame memoFrame = new MemoFrame(clientSocketHandler, selectedChannel, participantsModel, sessionID);
                         memoFrame.setVisible(true);
 
-                        JOptionPane.showMessageDialog(null, "채널 참가 성공!");
+                        JOptionPane.showMessageDialog(null, "Successfully joined the channel!");
                     } else {
-                        JOptionPane.showMessageDialog(null, "채널 참가 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to join the channel: " + response);
                     }
                 } catch (InterruptedException | ExecutionException e) {
-                    JOptionPane.showMessageDialog(null, "채널 참가 중 오류 발생: " + e.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while joining the channel: " + e.getMessage());
                 }
             }
         }.execute();
     }
 
-
-
-    // 채널 삭제 요청 처리
+    // Handle channel deletion request
     private void deleteSelectedChannel() {
         String selectedChannel = channelList.getSelectedValue();
         if (selectedChannel == null) {
-            JOptionPane.showMessageDialog(null, "삭제할 채널을 선택하세요!");
+            JOptionPane.showMessageDialog(null, "Please select a channel to delete!");
             return;
         }
 
@@ -194,18 +192,17 @@ public class ChannelFrame extends JFrame {
                 try {
                     String response = get();
                     if (response.startsWith("CHANNEL_DELETED")) {
-                        JOptionPane.showMessageDialog(null, "채널 삭제 성공!");
-                        loadChannelList(); // 채널 목록 새로고침
+                        JOptionPane.showMessageDialog(null, "Channel deleted successfully!");
+                        loadChannelList(); // Refresh the channel list
                     } else if (response.equals("NOT_OWNER")) {
-                        JOptionPane.showMessageDialog(null, "채널 삭제 권한이 없습니다.");
+                        JOptionPane.showMessageDialog(null, "You do not have permission to delete this channel.");
                     } else {
-                        JOptionPane.showMessageDialog(null, "채널 삭제 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to delete the channel: " + response);
                     }
                 } catch (InterruptedException | ExecutionException e) {
-                    JOptionPane.showMessageDialog(null, "채널 삭제 중 오류 발생: " + e.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while deleting the channel: " + e.getMessage());
                 }
             }
         }.execute();
     }
-
 }

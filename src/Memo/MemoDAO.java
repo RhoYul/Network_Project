@@ -22,18 +22,18 @@ public class MemoDAO {
         }
     }
 
-    // add new memo
+    // Add a new memo to the database
     public int addMemo(int channelId, String content) throws SQLException {
         String sql = "INSERT INTO memos (CHANNEL_ID, CONTENT, SAVED_AT) VALUES (?, ?, NOW())";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setInt(1, channelId); // 채널 ID
-            stmt.setString(2, content); // 메모 내용
-            stmt.executeUpdate(); // 메모 추가
+            stmt.setInt(1, channelId); // Channel ID
+            stmt.setString(2, content); // Memo content
+            stmt.executeUpdate(); // Execute the insertion
 
-            // 생성된 ID 가져오기
+            // Retrieve the generated memo ID
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    return generatedKeys.getInt(1); // 생성된 메모 ID 반환
+                    return generatedKeys.getInt(1); // Return the generated memo ID
                 } else {
                     throw new SQLException("Failed to retrieve memo ID.");
                 }
@@ -41,8 +41,7 @@ public class MemoDAO {
         }
     }
 
-
-    // Get all memos for a specific room (sorted by creation time)
+    // Get all memos for a specific channel (sorted by creation time)
     public List<MemoDTO> getMemosByRoom(int channelId) {
         List<MemoDTO> memoList = new ArrayList<>();
         String query = "SELECT * FROM memos WHERE CHANNEL_ID = ? ORDER BY CREATED_AT ASC";
@@ -84,29 +83,31 @@ public class MemoDAO {
         }
     }
 
+    // Save a backup of all memos for a specific channel
     public static void saveMemoBackup(int channelId, String memoContent) throws SQLException {
         String query = "INSERT INTO memos (CHANNEL_ID, CONTENT, SAVED_AT) VALUES (?, ?, NOW())";
         try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, channelId);
-            stmt.setString(2, memoContent);
-            stmt.executeUpdate();
+            stmt.setInt(1, channelId); // Channel ID
+            stmt.setString(2, memoContent); // Memo content
+            stmt.executeUpdate(); // Execute the backup save
         }
     }
-    
+
+    // Retrieve a memo by its ID
     public MemoDTO getMemoById(int memoId) throws SQLException {
         String query = "SELECT * FROM memos WHERE ID = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setInt(1, memoId);
+            pstmt.setInt(1, memoId); // Memo ID
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 MemoDTO memo = new MemoDTO();
-                memo.setMemoId(rs.getInt("ID"));
-                memo.setRoomId(rs.getInt("CHANNEL_ID"));
-                memo.setContent(rs.getString("CONTENT"));
-                memo.setCreatedAt(rs.getTimestamp("SAVED_AT"));
+                memo.setMemoId(rs.getInt("ID")); // Memo ID
+                memo.setRoomId(rs.getInt("CHANNEL_ID")); // Channel ID
+                memo.setContent(rs.getString("CONTENT")); // Memo content
+                memo.setCreatedAt(rs.getTimestamp("SAVED_AT")); // Saved timestamp
                 return memo;
             }
         }
-        return null; // 메모가 존재하지 않는 경우
+        return null; // Return null if the memo does not exist
     }
 }

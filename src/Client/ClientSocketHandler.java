@@ -26,7 +26,6 @@ public class ClientSocketHandler {
         return response;
     }
 
-    // 서버로부터 응답 수신
  	// ClientSocketHandler.receiveResponse()
     public String receiveResponse() throws IOException {
         String response = in.readLine();
@@ -39,7 +38,7 @@ public class ClientSocketHandler {
         if (socket != null) socket.close();
     }
     
-    // 세션 ID 포함 요청
+    // Memo Request
     public String sendAddMemoRequest(int roomId, String memoContent, String sessionID) throws IOException {
         String request = "ADD_MEMO " + roomId + " SESSION_ID=" + sessionID + " " + memoContent;
         String response = sendRequest(request);

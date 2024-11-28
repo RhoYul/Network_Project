@@ -1,4 +1,5 @@
-// 로그인을 담당하는 Frame입니다. 로그인 버튼 누를 시 서버에 로그인을 요청하게 되고, 데이터베이스에 존재하는 계정이면 로그인이 성공하게 됩니다.
+// This Frame is responsible for login functionality. 
+// When the login button is clicked, a request is sent to the server, and if the account exists in the database, login will succeed.
 
 package Main;
 
@@ -13,32 +14,37 @@ public class LoginFrame extends JFrame {
     private ClientSocketHandler clientSocketHandler;
 
     public LoginFrame(ClientSocketHandler clientSocketHandler) {
-        this.clientSocketHandler = clientSocketHandler; // 소켓 핸들러 주입
+        this.clientSocketHandler = clientSocketHandler; // Inject the socket handler
 
-        setTitle("로그인");
+        // Set frame properties
+        setTitle("Login");
         setSize(300, 200);
         setLocationRelativeTo(null);
 
+        // Create a panel with a grid layout for login form
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(3, 2, 5, 5));
 
-        JLabel userIdLabel = new JLabel("아이디:");
+        // Add labels and input fields for username and password
+        JLabel userIdLabel = new JLabel("Username:");
         JTextField userIdField = new JTextField();
-        JLabel passwdLabel = new JLabel("비밀번호:");
+        JLabel passwdLabel = new JLabel("Password:");
         JPasswordField passwdField = new JPasswordField();
-        JButton loginButton = new JButton("로그인");
-        JButton registerButton = new JButton("회원가입"); // 회원가입 버튼 추가
+        JButton loginButton = new JButton("Login");
+        JButton registerButton = new JButton("Register"); // Add a register button
 
+        // Add components to the panel
         panel.add(userIdLabel);
         panel.add(userIdField);
         panel.add(passwdLabel);
         panel.add(passwdField);
         panel.add(loginButton);
-        panel.add(registerButton); // 회원가입 버튼 추가
+        panel.add(registerButton); // Add the register button
 
+        // Add the panel to the frame
         add(panel);
 
-        // 로그인 버튼 동작
+        // Action for login button
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -46,36 +52,35 @@ public class LoginFrame extends JFrame {
                 String passwd = new String(passwdField.getPassword());
 
                 try {
-                    // 서버로 로그인 요청
+                    // Send login request to the server
                     String request = "LOGIN " + userId + " " + passwd;
                     String response = clientSocketHandler.sendRequest(request);
 
                     if (response.startsWith("LOGIN_SUCCESS")) {
                         String[] responseParts = response.split(" ");
                         if (responseParts.length < 2) {
-                            JOptionPane.showMessageDialog(null, "서버 응답에 문제가 있습니다.");
+                            JOptionPane.showMessageDialog(null, "Invalid server response.");
                             return;
                         }
                         String sessionID = responseParts[1]; // "LOGIN_SUCCESS <sessionId>"
-                        JOptionPane.showMessageDialog(null, "로그인 성공!");
-                        new ChannelFrame(clientSocketHandler, sessionID, userId).setVisible(true); // 채널 화면으로 이동
-                        dispose(); // 현재 창 닫기
+                        JOptionPane.showMessageDialog(null, "Login successful!");
+                        new ChannelFrame(clientSocketHandler, sessionID, userId).setVisible(true); // Move to channel management screen
+                        dispose(); // Close the current frame
                     } else {
-                        JOptionPane.showMessageDialog(null, "로그인 실패!");
+                        JOptionPane.showMessageDialog(null, "Login failed!");
                     }
                 } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(null, "서버와 통신 중 오류 발생: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error during server communication: " + ex.getMessage());
                 }
             }
         });
 
-
-        // 회원가입 버튼 동작
+        // Action for register button
         registerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new RegisterFrame(clientSocketHandler).setVisible(true); // 회원가입 화면으로 이동
-                dispose(); // 현재 창 닫기
+                new RegisterFrame(clientSocketHandler).setVisible(true); // Navigate to the registration screen
+                dispose(); // Close the current frame
             }
         });
     }

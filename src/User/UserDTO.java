@@ -1,6 +1,3 @@
-// Database로부터 User의 데이터를 받아오는 그릇
-// Database로부터 데이터를 받아오는 그릇
-
 package User;
 
 public class UserDTO {

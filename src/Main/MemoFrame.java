@@ -8,12 +8,12 @@ import java.awt.*;
 import java.io.IOException;
 
 public class MemoFrame extends JFrame {
-    private JTextArea memoArea; // 메모 영역
-    private JTextArea receivedMemoArea; // 받은 메모 영역
-    private String channelName; // 채널 이름
-    private int channelId; // 채널 ID
-    private ClientSocketHandler clientSocketHandler; // 서버와 통신 핸들러
-    private DefaultListModel<String> participantsModel; // 참여자 목록 모델
+    private JTextArea memoArea; // Memo display area
+    private JTextArea receivedMemoArea; // Received memo display area
+    private String channelName; // Channel name
+    private int channelId; // Channel ID
+    private ClientSocketHandler clientSocketHandler; // Server communication handler
+    private DefaultListModel<String> participantsModel; // Participant list model
     private final String sessionID;
 
     public MemoFrame(ClientSocketHandler clientSocketHandler, String channelName, DefaultListModel<String> participantsModel, String sessionID) {
@@ -27,32 +27,32 @@ public class MemoFrame extends JFrame {
         setSize(800, 600);
         setLayout(new BorderLayout());
 
-        // 상단 패널
+        // Top panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel channelLabel = new JLabel("채널: " + channelName);
+        JLabel channelLabel = new JLabel("Channel: " + channelName);
         topPanel.add(channelLabel);
 
-        // 메모 영역
+        // Memo display area
         memoArea = new JTextArea();
         memoArea.setEditable(false);
         JScrollPane memoScrollPane = new JScrollPane(memoArea);
 
-        // 받은 메모 영역
+        // Received memo display area
         receivedMemoArea = new JTextArea();
-        receivedMemoArea.setEditable(false); // 읽기 전용
-        receivedMemoArea.setBackground(new Color(230, 240, 250)); // 시각적으로 구분되도록 색상 지정
+        receivedMemoArea.setEditable(false); // Read-only
+        receivedMemoArea.setBackground(new Color(230, 240, 250)); // Visual distinction with background color
         JScrollPane receivedMemoScrollPane = new JScrollPane(receivedMemoArea);
 
-        JPanel memoPanel = new JPanel(new GridLayout(2, 1)); // 메모와 받은 메모를 세로로 나란히 배치
+        JPanel memoPanel = new JPanel(new GridLayout(2, 1)); // Arrange memo and received memo vertically
         memoPanel.add(memoScrollPane);
         memoPanel.add(receivedMemoScrollPane);
 
-        // 오른쪽 패널 (참여자 목록 및 버튼)
+        // Right panel (participant list and buttons)
         JPanel rightPanel = new JPanel(new BorderLayout());
-        JLabel participantsLabel = new JLabel("참여자");
+        JLabel participantsLabel = new JLabel("Participants");
         JList<String> participantsList = new JList<>(participantsModel);
         JScrollPane participantsScrollPane = new JScrollPane(participantsList);
-        JButton leaveChannelButton = new JButton("채널 퇴장");
+        JButton leaveChannelButton = new JButton("Leave Channel");
 
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 5, 5));
         JButton memoSaveAllButton = new JButton("Memo Save");
@@ -65,38 +65,38 @@ public class MemoFrame extends JFrame {
         rightPanel.add(participantsScrollPane, BorderLayout.CENTER);
         rightPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // 하단 패널
+        // Bottom panel
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField memoInputField = new JTextField(30);
         JButton saveMemoButton = new JButton("Send Memo");
         bottomPanel.add(memoInputField);
         bottomPanel.add(saveMemoButton);
 
-        // 메모 전송 액션 리스너
+        // Memo send action listener
         saveMemoButton.addActionListener(e -> sendMemo(memoInputField));
 
-        // 채널 퇴장 액션 리스너
+        // Leave channel action listener
         leaveChannelButton.addActionListener(e -> leaveChannel());
 
-        // Memo Save 버튼 액션 리스너
+        // Memo save button action listener
         memoSaveAllButton.addActionListener(e -> saveAllMemos());
 
-        // Push Memo 버튼 액션 리스너
-        pushMemoButton.addActionListener(e -> pushAllMemos());
+        // Push memo button action listener
+        pushMemoButton.addActionListener(e -> pushAllMemos(memoInputField));
 
-        // 프레임에 컴포넌트 추가
+        // Add components to the frame
         add(topPanel, BorderLayout.NORTH);
-        add(memoPanel, BorderLayout.CENTER); // 메모 패널을 중앙에 추가
+        add(memoPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // 서버 메시지 수신 시작
+        // Start receiving server messages
         startListening();
     }
 
-    // 채널 퇴장 처리
+    // Handle leaving the channel
     private void leaveChannel() {
-        int confirm = JOptionPane.showConfirmDialog(this, "정말 이 채널에서 퇴장하시겠습니까?", "채널 퇴장", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to leave this channel?", "Leave Channel", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
@@ -113,24 +113,24 @@ public class MemoFrame extends JFrame {
                 try {
                     String response = get();
                     if (response.startsWith("CHANNEL_LEFT")) {
-                        JOptionPane.showMessageDialog(null, "채널에서 퇴장하였습니다.");
+                        JOptionPane.showMessageDialog(null, "You have left the channel.");
                         dispose();
                     } else {
-                        JOptionPane.showMessageDialog(null, "채널 퇴장 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to leave channel: " + response);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "채널 퇴장 중 오류 발생: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while leaving the channel: " + ex.getMessage());
                     ex.printStackTrace();
                 }
             }
         }.execute();
     }
 
-    // 메모 전송 처리
+    // Handle memo sending
     private void sendMemo(JTextField memoInputField) {
         String memoContent = memoInputField.getText();
         if (memoContent.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "메모 내용을 입력하세요!");
+            JOptionPane.showMessageDialog(this, "Please enter memo content!");
             return;
         }
 
@@ -148,42 +148,37 @@ public class MemoFrame extends JFrame {
                     if (response.startsWith("ADD_MEMO_SUCCESS")) {
                         memoInputField.setText("");
                     } else {
-                        JOptionPane.showMessageDialog(null, "메모 전송 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to send memo: " + response);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "메모 전송 중 오류 발생: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while sending memo: " + ex.getMessage());
                     ex.printStackTrace();
                 }
             }
         }.execute();
     }
 
-    // Push Memo 처리
-    private void pushAllMemos() {
-        String targetChannel = JOptionPane.showInputDialog(this, "메모를 전송할 채널명을 입력하세요:");
+    // Handle pushing memo to another channel
+    private void pushAllMemos(JTextField memoInputField) {
+        String memoContent = memoInputField.getText();
+        if (memoContent.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter memo content!");
+            return;
+        }
+        String targetChannel = JOptionPane.showInputDialog(this, "Enter the target channel name:");
         if (targetChannel == null || targetChannel.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "채널명을 입력해야 합니다!");
+            JOptionPane.showMessageDialog(this, "You must enter a channel name!");
             return;
         }
 
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() throws Exception {
-                int targetChannelId = ChannelDAO.getChannelIdFromName(targetChannel); // 대상 채널 ID 가져오기
-                int currentChannelId = ChannelDAO.getChannelIdFromName(channelName); // 현재 채널 ID 가져오기
+                int targetChannelId = ChannelDAO.getChannelIdFromName(targetChannel); // Get the target channel ID
 
-                // 메모를 추가하고 memoId 반환
-                String memoContent = memoArea.getText().trim(); // 메모 내용을 가져옴
-                if (memoContent.isEmpty()) {
-                    throw new Exception("메모 내용이 비어 있습니다!");
-                }
-
-                // 현재 채널에서 메모를 저장하고 memoId를 받아옴
-                String memoId = clientSocketHandler.sendAddMemoRequest(currentChannelId, memoContent, sessionID);
-
-                // memoId와 타겟 채널 ID를 포함한 PUSH_MEMO 요청 생성
-                String request = "PUSH_MEMO " + memoId + " " + targetChannelId + " SESSION_ID=" + sessionID;
-                System.out.println("Push Memo Request: " + request); // 디버깅용 로그
+                // Create PUSH_MEMO request with memoId and target channel ID
+                String request = "PUSH_MEMO " + targetChannelId + " SESSION_ID=" + sessionID + " " + memoContent;
+                System.out.println("Push Memo Request: " + request); // Debug log
                 return clientSocketHandler.sendRequest(request);
             }
 
@@ -191,22 +186,22 @@ public class MemoFrame extends JFrame {
             protected void done() {
                 try {
                     String response = get();
-                    System.out.println("Received response from server: " + response); // 디버깅용 로그
+                    System.out.println("Received response from server: " + response); // Debug log
                     if (response.startsWith("PUSH_MEMO_SUCCESS")) {
-                        JOptionPane.showMessageDialog(null, "메모가 성공적으로 전송되었습니다!");
+                        memoInputField.setText("");
+                        JOptionPane.showMessageDialog(null, "Memo successfully sent!");
                     } else {
-                        JOptionPane.showMessageDialog(null, "메모 전송 실패: " + response);
+                        JOptionPane.showMessageDialog(null, "Failed to send memo: " + response);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "메모 전송 중 오류 발생: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error while sending memo: " + ex.getMessage());
                     ex.printStackTrace();
                 }
             }
         }.execute();
     }
 
-
-    // 서버 메시지 수신 처리
+    // Start receiving server messages
     private void startListening() {
         new Thread(() -> {
             try {
@@ -219,7 +214,7 @@ public class MemoFrame extends JFrame {
                     } else if (response.startsWith("MEMO_UPDATE")) {
                         appendMemo(response.replace("MEMO_UPDATE ", ""));
                     } else if (response.startsWith("RECEIVED_MEMO")) {
-                        // 수신한 메모 내용에서 "RECEIVED_MEMO " 제거
+                        // Extract memo content
                         String memo = response.replace("RECEIVED_MEMO ", "").trim();
                         appendReceivedMemo(memo);
                     }
@@ -230,13 +225,12 @@ public class MemoFrame extends JFrame {
         }).start();
     }
 
-    // Push 받은 메모를 Received Memo 영역에 추가
+    // Append pushed memo to Received Memo area
     private void appendReceivedMemo(String memo) {
         SwingUtilities.invokeLater(() -> receivedMemoArea.append(memo + "\n"));
     }
 
-
-    // 참여자 목록 갱신
+    // Update participant list
     private void updateParticipants(String message, boolean joined) {
         String userId = message.split(" ")[1];
         SwingUtilities.invokeLater(() -> {
@@ -250,15 +244,16 @@ public class MemoFrame extends JFrame {
         });
     }
 
-    // 메모 추가 처리
+    // Append memo to the memo display area
     private void appendMemo(String memo) {
         SwingUtilities.invokeLater(() -> memoArea.append(memo + "\n"));
     }
-    
+
+    // Save all memos to the database
     private void saveAllMemos() {
         String allMemos = memoArea.getText();
         if (allMemos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "백업할 메모가 없습니다!");
+            JOptionPane.showMessageDialog(this, "There are no memos to save!");
             return;
         }
 
@@ -272,7 +267,7 @@ public class MemoFrame extends JFrame {
 
             @Override
             protected void done() {
-                JOptionPane.showMessageDialog(null, "메모가 데이터베이스에 성공적으로 백업되었습니다!");
+                JOptionPane.showMessageDialog(null, "Memos successfully backed up to the database!");
             }
         }.execute();
     }
